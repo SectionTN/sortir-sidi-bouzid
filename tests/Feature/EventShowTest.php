@@ -104,3 +104,11 @@ it('deletes an event and its tag links', function () {
     $this->assertDatabaseMissing('events', ['id' => $event->id]);
     $this->assertDatabaseMissing('event_tag', ['event_id' => $event->id]);
 });
+
+it('escapes the page title only once', function () {
+    $event = Event::factory()->published()->create(['title' => "Tournoi d'échecs"]);
+
+    $this->get(route('events.show', $event))
+        ->assertOk()
+        ->assertSee('<title>Tournoi d&#039;échecs - Sortir à Sidi Bouzid</title>', false);
+});

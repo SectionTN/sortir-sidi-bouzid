@@ -1,5 +1,5 @@
 <x-layout>
-    <x-slot:title>Modifier {{ $event->title }}</x-slot:title>
+    <x-slot:title>Modifier {{ $event->title }} - Sortir à Sidi Bouzid</x-slot:title>
 
     <x-page-header title="Modifier l'événement" :subtitle="$event->title" />
 

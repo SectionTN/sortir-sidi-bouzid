@@ -1,5 +1,5 @@
 <x-layout>
-    <x-slot:title>{{ $heading }}</x-slot:title>
+    <x-slot:title>{{ $heading }} - Sortir à Sidi Bouzid</x-slot:title>
 
     <x-page-header :title="$heading" :subtitle="$subtitle">
         @isset($previousMonth)

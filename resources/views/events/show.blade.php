@@ -1,5 +1,5 @@
 <x-layout>
-    <x-slot:title>{{ $event->title }}</x-slot:title>
+    <x-slot:title>{{ $event->title }} - Sortir à Sidi Bouzid</x-slot:title>
 
     <a href="{{ route('events.index') }}" class="mb-6 inline-flex items-center gap-2 text-sm font-medium text-stone-600 hover:text-ink">
         <x-icon.arrow-left class="fill-current" />

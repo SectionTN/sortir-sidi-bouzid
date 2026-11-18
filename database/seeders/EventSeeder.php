@@ -16,11 +16,11 @@ class EventSeeder extends Seeder
      */
     private const EVENTS = [
         [
-            'title' => 'Club de lecture : romans de l\'été',
+            'title' => 'Club de lecture : nos coups de cœur',
             'category' => 'conference', 'venue' => 'bibliotheque-regionale', 'days' => 0, 'time' => '18:00', 'price' => 0, 'published' => true,
             'tags' => ['en-famille', 'debutants-bienvenus'],
-            'summary' => 'Une heure pour parler des livres qui nous ont marqués cet été, autour d\'un thé.',
-            'description' => "Chacun apporte un roman lu pendant l'été et le présente en quelques minutes. Pas besoin d'avoir tout lu : l'idée est de donner envie aux autres.\n\nLe club se réunit chaque mois dans la salle de lecture de la bibliothèque. Les nouveaux venus sont les bienvenus.",
+            'summary' => 'Une heure pour parler des livres qui nous ont marqués, autour d\'un thé.',
+            'description' => "Chacun apporte un roman qu'il a aimé et le présente en quelques minutes. Pas besoin d'avoir tout lu : l'idée est de donner envie aux autres.\n\nLe club se réunit chaque mois dans la salle de lecture de la bibliothèque. Les nouveaux venus sont les bienvenus.",
         ],
         [
             'title' => 'Exposition : Les couleurs de la steppe',
@@ -128,11 +128,11 @@ class EventSeeder extends Seeder
             'description' => "Le tournoi se joue en sept rondes de quinze minutes par joueur. Les appariements tiennent compte du niveau de chacun.\n\nDes échiquiers sont prêtés sur place. Une initiation est proposée aux débutants à 9 h.",
         ],
         [
-            'title' => 'Concert de fin d\'année de l\'école de musique',
+            'title' => 'Concert des élèves de l\'école de musique',
             'category' => 'concert', 'venue' => 'maison-de-la-culture', 'days' => 48, 'time' => '18:30', 'price' => 5, 'published' => true,
             'tags' => ['en-famille'],
             'summary' => 'Les élèves de l\'école de musique montent sur scène pour leur concert annuel.',
-            'description' => "Piano, guitare, oud et chorale : les élèves de tous les niveaux présentent ce qu'ils ont travaillé pendant l'année.\n\nLa recette du concert finance l'achat de nouveaux instruments.",
+            'description' => "Piano, guitare, oud et chorale : les élèves de tous les niveaux présentent ce qu'ils ont travaillé ces derniers mois.\n\nLa recette du concert finance l'achat de nouveaux instruments.",
         ],
         [
             'title' => 'Concert d\'ouverture de la saison',

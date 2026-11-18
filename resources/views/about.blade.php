@@ -1,5 +1,5 @@
 <x-layout>
-    <x-slot:title>À propos</x-slot:title>
+    <x-slot:title>À propos - Sortir à Sidi Bouzid</x-slot:title>
 
     <x-page-header title="À propos" subtitle="Un projet de l'Atelier Framework Côté Serveur, ISET Sidi Bouzid." />
 

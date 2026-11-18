@@ -1,5 +1,5 @@
 <x-layout>
-    <x-slot:title>Proposer un événement</x-slot:title>
+    <x-slot:title>Proposer un événement - Sortir à Sidi Bouzid</x-slot:title>
 
     <x-page-header title="Proposer un événement" subtitle="Chaque champ est vérifié par le serveur avant l'enregistrement." />
 
