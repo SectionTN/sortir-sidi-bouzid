@@ -67,5 +67,6 @@ it('shows the about page with the author', function () {
     $this->get(route('about'))
         ->assertOk()
         ->assertSee('Rayen Sbai')
+        ->assertSee('MDW3, classe 3, groupe 1')
         ->assertSee('Atelier Framework Côté Serveur');
 });

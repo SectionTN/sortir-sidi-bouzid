@@ -33,7 +33,7 @@ class PageController extends Controller
     {
         return view('about', [
             'author' => 'Rayen Sbai',
-            'group' => null,
+            'group' => 'MDW3, classe 3, groupe 1',
         ]);
     }
 }
