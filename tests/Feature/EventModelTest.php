@@ -51,5 +51,6 @@ it('seeds upcoming, past and draft events', function () {
     expect(Event::published()->upcoming()->count())->toBeGreaterThanOrEqual(12)
         ->and(Event::published()->past()->count())->toBeGreaterThanOrEqual(4)
         ->and(Event::where('is_published', false)->count())->toBeGreaterThanOrEqual(3)
-        ->and(Event::whereNull('category_id')->orWhereNull('venue_id')->count())->toBe(0);
+        ->and(Event::whereNull('category_id')->orWhereNull('venue_id')->count())->toBe(0)
+        ->and(Event::has('tags')->count())->toBeGreaterThanOrEqual(20);
 });

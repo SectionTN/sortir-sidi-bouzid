@@ -199,7 +199,7 @@ class EventSeeder extends Seeder
     {
         $categories = Category::all()->keyBy('slug');
         $venues = Venue::all()->keyBy('slug');
-        $tags = Tag::all()->keyBy('slug');
+        $tags = Tag::all();
 
         foreach (self::EVENTS as $data) {
             $event = Event::create([
@@ -214,7 +214,7 @@ class EventSeeder extends Seeder
                 'venue_id' => $venues[$data['venue']]->id,
             ]);
 
-            $event->tags()->attach($tags->only($data['tags'])->pluck('id'));
+            $event->tags()->attach($tags->whereIn('slug', $data['tags'])->pluck('id'));
         }
     }
 }
