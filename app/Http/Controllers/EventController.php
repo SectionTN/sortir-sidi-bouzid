@@ -7,7 +7,10 @@ use App\Models\Event;
 use App\Models\Tag;
 use App\Models\Venue;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class EventController extends Controller
@@ -84,6 +87,25 @@ class EventController extends Controller
         ]);
     }
 
+    public function create(): View
+    {
+        return view('events.create', [
+            'categories' => Category::orderBy('name')->get(),
+            'venues' => Venue::orderBy('name')->get(),
+            'tags' => Tag::orderBy('name')->get(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $this->validateEvent($request);
+
+        $event = Event::create(Arr::except($validated, ['tags']));
+        $event->tags()->sync($validated['tags'] ?? []);
+
+        return redirect()->route('events.show', $event)->with('status', 'Événement enregistré.');
+    }
+
     public function show(Event $event): View
     {
         $event->load('category', 'venue', 'tags');
@@ -98,6 +120,28 @@ class EventController extends Controller
             ->get();
 
         return view('events.show', compact('event', 'related'));
+    }
+
+    public function edit(Event $event): View
+    {
+        $event->load('tags');
+
+        return view('events.edit', [
+            'event' => $event,
+            'categories' => Category::orderBy('name')->get(),
+            'venues' => Venue::orderBy('name')->get(),
+            'tags' => Tag::orderBy('name')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Event $event): RedirectResponse
+    {
+        $validated = $this->validateEvent($request, $event);
+
+        $event->update(Arr::except($validated, ['tags']));
+        $event->tags()->sync($validated['tags'] ?? []);
+
+        return redirect()->route('events.show', $event)->with('status', 'Modifications enregistrées.');
     }
 
     public function destroy(Event $event): RedirectResponse
@@ -116,5 +160,33 @@ class EventController extends Controller
             : 'Événement retiré de l\'agenda : il est maintenant dans les brouillons.';
 
         return redirect()->route('events.show', $event)->with('status', $status);
+    }
+
+    private function validateEvent(Request $request, ?Event $event = null): array
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9-]+$/',
+                Rule::notIn(['create', 'passes', 'brouillons']),
+                Rule::unique('events', 'slug')->ignore($event),
+            ],
+            'summary' => ['nullable', 'string', 'max:255'],
+            'description' => ['required', 'string', 'min:20'],
+            'starts_at' => ['required', 'date'],
+            'price' => ['required', 'integer', 'min:0', 'max:1000'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'venue_id' => ['required', 'integer', 'exists:venues,id'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['integer', 'exists:tags,id'],
+            'is_published' => ['nullable', 'boolean'],
+        ]);
+
+        $validated['is_published'] = $request->boolean('is_published');
+
+        return $validated;
     }
 }
