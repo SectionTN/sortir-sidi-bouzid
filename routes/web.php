@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'home')->name('home');
-Route::view('/a-propos', 'about')->name('about');
+Route::get('/', [PageController::class, 'home'])->name('home');
+Route::get('/a-propos', [PageController::class, 'about'])->name('about');
 
 Route::get('/events/passes', [EventController::class, 'past'])->name('events.past');
 Route::get('/events/brouillons', [EventController::class, 'drafts'])->name('events.drafts');
