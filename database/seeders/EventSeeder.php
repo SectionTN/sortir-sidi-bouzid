@@ -173,7 +173,7 @@ class EventSeeder extends Seeder
             'title' => 'Atelier de théâtre pour adolescents',
             'category' => 'atelier', 'venue' => 'espace-jeunes', 'days' => 20, 'time' => '14:00', 'price' => 0, 'published' => false,
             'tags' => ['debutants-bienvenus'],
-            'summary' => 'Improvisation et jeux de scène pour les 13-17 ans.',
+            'summary' => 'Improvisation et jeux de scène pour les jeunes de 13 à 17 ans.',
             'description' => "Un comédien propose des exercices d'improvisation, de voix et de placement sur scène.\n\nL'atelier se termine par une courte présentation devant les parents.",
         ],
         [

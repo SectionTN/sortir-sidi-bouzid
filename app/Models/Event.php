@@ -35,6 +35,11 @@ class Event extends Model
         ];
     }
 
+    public function priceLabel(): string
+    {
+        return $this->price === 0 ? 'Gratuit' : $this->price.' DT';
+    }
+
     public function getRouteKeyName(): string
     {
         return 'slug';
