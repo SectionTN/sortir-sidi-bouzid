@@ -19,3 +19,5 @@ Route::get('/events/lieu/{venue:slug}', [EventController::class, 'byVenue'])->na
 Route::get('/events/tag/{tag:slug}', [EventController::class, 'byTag'])->name('events.tag');
 
 Route::resource('events', EventController::class);
+
+Route::patch('/events/{event}/publication', [EventController::class, 'togglePublication'])->name('events.publication');

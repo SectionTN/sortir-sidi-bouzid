@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Event;
 use App\Models\Tag;
 use App\Models\Venue;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
@@ -81,5 +82,39 @@ class EventController extends Controller
             'subtitle' => 'Les prochains événements marqués « '.$tag->name.' ».',
             'events' => $tag->events()->published()->upcoming()->with('category', 'venue')->orderBy('starts_at')->paginate(6),
         ]);
+    }
+
+    public function show(Event $event): View
+    {
+        $event->load('category', 'venue', 'tags');
+
+        $related = $event->category->events()
+            ->published()
+            ->upcoming()
+            ->where('events.id', '!=', $event->id)
+            ->with('category', 'venue')
+            ->orderBy('starts_at')
+            ->take(3)
+            ->get();
+
+        return view('events.show', compact('event', 'related'));
+    }
+
+    public function destroy(Event $event): RedirectResponse
+    {
+        $event->delete();
+
+        return redirect()->route('events.index')->with('status', 'Événement supprimé.');
+    }
+
+    public function togglePublication(Event $event): RedirectResponse
+    {
+        $event->update(['is_published' => ! $event->is_published]);
+
+        $status = $event->is_published
+            ? 'Événement publié : il apparaît maintenant dans l\'agenda.'
+            : 'Événement retiré de l\'agenda : il est maintenant dans les brouillons.';
+
+        return redirect()->route('events.show', $event)->with('status', $status);
     }
 }
