@@ -1,58 +1,83 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sortir à Sidi Bouzid
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Un agenda des sorties de Sidi Bouzid : concerts, ateliers, sport, expositions, conférences et cinéma. On parcourt les événements par date, par catégorie, par lieu ou par tag, et on peut en proposer, en modifier, en publier ou en supprimer.
 
-## About Laravel
+Projet de l'Atelier Framework Côté Serveur, ISET Sidi Bouzid. Laravel 13, Blade, Tailwind CSS 4, SQLite et Pest.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+![Accueil](screenshots/accueil.png)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fonctionnalités
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Agenda des événements à venir, page des événements passés et page de chaque mois.
+- Pages par catégorie, par lieu et par tag, liées par slug (`{category:slug}`, `{venue:slug}`, `{tag:slug}`).
+- Page d'un événement à son slug (`/events/soiree-malouf-au-clair-de-lune`), avec les événements à venir de la même catégorie.
+- Formulaire de création et de modification validé côté serveur, avec des messages d'erreur en français.
+- Publication et dépublication (`PATCH`), page des brouillons, suppression avec confirmation.
+- Accueil : le prochain événement en affiche, les suivants, et les compteurs par catégorie, lieu et tag calculés avec `withCount`.
+- Un événement est « à venir » jusqu'à la fin de son jour de début, à l'heure de Tunis (`Africa/Tunis`).
 
-## Learning Laravel
+## Routes disponibles
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Méthode | URI | Nom | Action |
+|---|---|---|---|
+| GET | `/` | `home` | `PageController@home` |
+| GET | `/a-propos` | `about` | `PageController@about` |
+| GET | `/events` | `events.index` | `EventController@index` |
+| GET | `/events/passes` | `events.past` | `EventController@past` |
+| GET | `/events/brouillons` | `events.drafts` | `EventController@drafts` |
+| GET | `/events/mois/{year}/{month}` | `events.month` | `EventController@month` |
+| GET | `/events/categorie/{category:slug}` | `events.category` | `EventController@byCategory` |
+| GET | `/events/lieu/{venue:slug}` | `events.venue` | `EventController@byVenue` |
+| GET | `/events/tag/{tag:slug}` | `events.tag` | `EventController@byTag` |
+| GET | `/events/create` | `events.create` | `EventController@create` |
+| POST | `/events` | `events.store` | `EventController@store` |
+| GET | `/events/{event}` | `events.show` | `EventController@show` |
+| GET | `/events/{event}/edit` | `events.edit` | `EventController@edit` |
+| PUT | `/events/{event}` | `events.update` | `EventController@update` |
+| DELETE | `/events/{event}` | `events.destroy` | `EventController@destroy` |
+| PATCH | `/events/{event}/publication` | `events.publication` | `EventController@togglePublication` |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Il faut PHP 8.3 ou plus récent, Composer et Node.js.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Le site est ensuite sur `http://localhost:8000`.
 
-## Contributing
+## Données de démonstration
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+`php artisan migrate --seed` crée 6 catégories, 7 lieux, 5 tags et 25 événements inventés. Leurs dates sont calculées à partir du jour où la commande est lancée : il y a toujours des événements à venir, quelques événements passés et 3 brouillons.
 
-## Code of Conduct
+Pour repartir de zéro : `php artisan migrate:fresh --seed`. Attention : cette commande vide la base avant de la remplir.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Tests
 
-## Security Vulnerabilities
+```bash
+php artisan test
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Les tests figent la date avec `travelTo()` : ils donnent le même résultat quel que soit le jour où on les lance.
 
-## License
+## Captures d'écran
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+![Agenda](screenshots/agenda.png)
+
+![Page d'un événement](screenshots/evenement.png)
+
+![Formulaire avec erreurs de validation](screenshots/formulaire-erreurs.png)
+
+![Page du mois](screenshots/mois.png)
+
+![Accueil sur téléphone](screenshots/accueil-telephone.png)
+
+![Menu sur téléphone](screenshots/menu-telephone.png)
