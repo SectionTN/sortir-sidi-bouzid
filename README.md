@@ -39,24 +39,21 @@ Projet de l'Atelier Framework Côté Serveur, ISET Sidi Bouzid. Laravel 13, Blad
 
 ## Installation
 
-Il faut PHP 8.3 ou plus récent, Composer et Node.js.
+Il faut PHP 8.4 ou plus récent, Composer et Node.js.
 
 ```bash
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate --seed
-npm install
-npm run build
+composer run setup
+php artisan db:seed
 php artisan serve
 ```
 
 Le site est ensuite sur `http://localhost:8000`.
 
+`composer run setup` installe les dépendances PHP, copie `.env.example` en `.env`, génère la clé de l'application, crée la base SQLite et ses tables, installe les dépendances JavaScript et compile le CSS. Les mêmes commandes marchent sous Windows, macOS et Linux.
+
 ## Données de démonstration
 
-`php artisan migrate --seed` crée 6 catégories, 7 lieux, 5 tags et 25 événements inventés. Leurs dates sont calculées à partir du jour où la commande est lancée : il y a toujours des événements à venir, quelques événements passés et 3 brouillons.
+`php artisan db:seed` crée 6 catégories, 7 lieux, 5 tags et 25 événements inventés. Leurs dates sont calculées à partir du jour où la commande est lancée : des événements à venir sur 8 semaines, quelques événements passés et 3 brouillons. Avant une démonstration, relancez `php artisan migrate:fresh --seed` pour que les dates repartent du jour même.
 
 Pour repartir de zéro : `php artisan migrate:fresh --seed`. Attention : cette commande vide la base avant de la remplir.
 
