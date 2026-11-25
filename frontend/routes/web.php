@@ -15,9 +15,9 @@ Route::get('/events/mois/{year}/{month}', [EventController::class, 'month'])
     ->where('month', '0?[1-9]|1[0-2]')
     ->name('events.month');
 
-Route::get('/events/categorie/{category:slug}', [EventController::class, 'byCategory'])->name('events.category');
-Route::get('/events/lieu/{venue:slug}', [EventController::class, 'byVenue'])->name('events.venue');
-Route::get('/events/tag/{tag:slug}', [EventController::class, 'byTag'])->name('events.tag');
+Route::get('/events/categorie/{category}', [EventController::class, 'byCategory'])->name('events.category');
+Route::get('/events/lieu/{venue}', [EventController::class, 'byVenue'])->name('events.venue');
+Route::get('/events/tag/{tag}', [EventController::class, 'byTag'])->name('events.tag');
 
 Route::resource('events', EventController::class);
 

@@ -1,66 +1,84 @@
 <?php
 
-use App\Models\Category;
-use App\Models\Event;
-use App\Models\Tag;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     $this->withoutVite();
     $this->travelTo('2026-12-05 10:00');
 });
 
+function fakeHomeBackend(array $events = [], array $categories = [], array $tags = []): void
+{
+    Http::fake([
+        'backend.test/api/events*' => Http::response(apiPage($events, perPage: 7)),
+        'backend.test/api/categories' => Http::response(['data' => $categories]),
+        'backend.test/api/venues' => Http::response(['data' => [
+            ['id' => 1, 'name' => 'Maison de la culture', 'slug' => 'maison-de-la-culture', 'address' => 'Avenue Habib Bourguiba', 'events_count' => 4],
+        ]]),
+        'backend.test/api/tags' => Http::response(['data' => $tags]),
+    ]);
+}
+
 it('features the next event and lists the ones after it', function () {
-    Event::factory()->published()->create(['title' => 'Soirée jazz', 'starts_at' => '2026-12-20 19:00']);
-    Event::factory()->published()->create(['title' => 'Atelier poterie', 'starts_at' => '2026-12-06 15:00']);
+    fakeHomeBackend([
+        apiEvent(['title' => 'Atelier poterie', 'slug' => 'atelier-poterie', 'starts_at' => '2026-12-06T15:00:00+01:00']),
+        apiEvent(['title' => 'Soirée jazz', 'starts_at' => '2026-12-20T19:00:00+01:00']),
+    ]);
 
     $response = $this->get(route('home'))
         ->assertOk()
-        ->assertSeeInOrder(['Atelier poterie', 'Soirée jazz']);
+        ->assertSeeInOrder(['Atelier poterie', 'Soirée jazz'])
+        ->assertSee('Maison de la culture');
 
-    expect($response->viewData('featured')->title)->toBe('Atelier poterie')
+    expect($response->viewData('featured')['title'])->toBe('Atelier poterie')
         ->and($response->viewData('nextEvents')->pluck('title')->all())->toBe(['Soirée jazz']);
+
+    Http::assertSent(fn (Request $request) => ($request['per_page'] ?? null) == 7 && ! isset($request['status']));
 });
 
 it('hides drafts and past events from the home page', function () {
-    Event::factory()->create(['title' => 'Répétition fermée']);
-    Event::factory()->published()->create(['title' => 'Vieux concert', 'starts_at' => '2026-12-01 20:00']);
+    fakeHomeBackend();
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertDontSee('Répétition fermée')
-        ->assertDontSee('Vieux concert')
         ->assertSee('Aucun événement à venir pour le moment.');
 });
 
 it('counts upcoming published events per category', function () {
-    $concert = Category::factory()->create(['name' => 'Concert']);
-    Event::factory(2)->published()->upcoming()->for($concert)->create();
-    Event::factory()->published()->past()->for($concert)->create();
-    Event::factory()->upcoming()->for($concert)->create();
+    fakeHomeBackend(categories: [
+        ['id' => 1, 'name' => 'Concert', 'slug' => 'concert', 'color' => 'rose', 'events_count' => 2],
+    ]);
 
-    $categories = $this->get(route('home'))->assertOk()->viewData('categories');
+    $categories = $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('2 à venir')
+        ->viewData('categories');
 
-    expect($categories->firstWhere('name', 'Concert')->events_count)->toBe(2);
+    expect($categories->firstWhere('name', 'Concert')['events_count'])->toBe(2);
 });
 
 it('hides tags with no upcoming event', function () {
-    $family = Tag::factory()->create(['name' => 'En famille']);
-    $students = Tag::factory()->create(['name' => 'Étudiants']);
-    Event::factory()->published()->upcoming()->hasAttached($family)->create();
-    Event::factory()->published()->past()->hasAttached($students)->create();
+    fakeHomeBackend(tags: [
+        ['id' => 1, 'name' => 'En famille', 'slug' => 'en-famille', 'events_count' => 1],
+        ['id' => 2, 'name' => 'Étudiants', 'slug' => 'etudiants', 'events_count' => 0],
+    ]);
 
     $tags = $this->get(route('home'))->assertOk()->viewData('popularTags');
 
     expect($tags->pluck('name')->all())->toBe(['En famille']);
 });
 
-it('removes an unpublished event from the home page', function () {
-    $event = Event::factory()->published()->upcoming()->create(['title' => 'Soirée jazz']);
-    $this->get(route('home'))->assertSee('Soirée jazz');
+it('sorts popular tags by count, then by name', function () {
+    fakeHomeBackend(tags: [
+        ['id' => 1, 'name' => 'Accès libre', 'slug' => 'acces-libre', 'events_count' => 1],
+        ['id' => 2, 'name' => 'En famille', 'slug' => 'en-famille', 'events_count' => 3],
+        ['id' => 3, 'name' => 'Débutants', 'slug' => 'debutants', 'events_count' => 1],
+    ]);
 
-    $this->patch(route('events.publication', $event));
+    $tags = $this->get(route('home'))->assertOk()->viewData('popularTags');
 
-    $this->get(route('home'))->assertDontSee('Soirée jazz');
+    expect($tags->pluck('name')->values()->all())->toBe(['En famille', 'Accès libre', 'Débutants']);
 });
 
 it('shows the about page with the author', function () {

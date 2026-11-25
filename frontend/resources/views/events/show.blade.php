@@ -1,5 +1,7 @@
+@use('App\Support\CategoryStyle')
+
 <x-layout>
-    <x-slot:title>{{ $event->title }} - Sortir à Sidi Bouzid</x-slot:title>
+    <x-slot:title>{{ $event['title'] }} - Sortir à Sidi Bouzid</x-slot:title>
 
     <a href="{{ route('events.index') }}" class="mb-6 inline-flex items-center gap-2 text-sm font-medium text-stone-600 hover:text-ink">
         <x-icon.arrow-left class="fill-current" />
@@ -7,26 +9,26 @@
     </a>
 
     <article>
-        <header class="rounded-3xl px-6 py-8 sm:px-10 sm:py-12 {{ $event->category->style('solid') }}">
+        <header class="rounded-3xl px-6 py-8 sm:px-10 sm:py-12 {{ CategoryStyle::for($event['category']['color'], 'solid') }}">
             <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('events.category', $event->category) }}" class="rounded-full bg-white/70 px-3 py-1 text-sm font-medium hover:bg-white">{{ $event->category->name }}</a>
+                <a href="{{ route('events.category', $event['category']['slug']) }}" class="rounded-full bg-white/70 px-3 py-1 text-sm font-medium hover:bg-white">{{ $event['category']['name'] }}</a>
 
-                @if (! $event->is_published)
+                @if (! $event['is_published'])
                     <p class="rounded-full bg-ink px-3 py-1 text-sm font-medium text-paper">Cet événement n'est pas encore publié.</p>
                 @endif
             </div>
 
-            <h1 class="mt-6 max-w-[20ch] font-display text-4xl font-semibold tracking-tight text-balance sm:text-6xl">{{ $event->title }}</h1>
+            <h1 class="mt-6 max-w-[20ch] font-display text-4xl font-semibold tracking-tight text-balance sm:text-6xl">{{ $event['title'] }}</h1>
 
-            @if ($event->summary)
-                <p class="mt-4 max-w-[55ch] text-lg text-pretty sm:text-xl">{{ $event->summary }}</p>
+            @if ($event['summary'])
+                <p class="mt-4 max-w-[55ch] text-lg text-pretty sm:text-xl">{{ $event['summary'] }}</p>
             @endif
 
-            <x-date-tile :date="$event->starts_at" size="lg" class="mt-8" />
+            <x-date-tile :date="$event['starts_at']" size="lg" class="mt-8" />
         </header>
 
         <div class="mt-10 grid gap-10 lg:grid-cols-3 lg:gap-16">
-            <div class="max-w-[65ch] text-lg leading-relaxed whitespace-pre-line text-stone-800 lg:col-span-2">{{ $event->description }}</div>
+            <div class="max-w-[65ch] text-lg leading-relaxed whitespace-pre-line text-stone-800 lg:col-span-2">{{ $event['description'] }}</div>
 
             <aside class="space-y-8">
                 <dl class="divide-y divide-ink/10 rounded-3xl bg-white px-6 ring-1 ring-ink/10">
@@ -34,14 +36,14 @@
                         <x-icon.calendar class="mt-1 fill-stone-400" />
                         <div>
                             <dt class="text-sm text-stone-500">Date</dt>
-                            <dd class="font-medium">{{ ucfirst($event->starts_at->translatedFormat('l j F Y')) }}</dd>
+                            <dd class="font-medium">{{ ucfirst($event['starts_at']->translatedFormat('l j F Y')) }}</dd>
                         </div>
                     </div>
                     <div class="flex gap-3 py-4">
                         <x-icon.clock class="mt-1 fill-stone-400" />
                         <div>
                             <dt class="text-sm text-stone-500">Heure</dt>
-                            <dd class="font-medium">{{ $event->starts_at->format('G\hi') }}</dd>
+                            <dd class="font-medium">{{ $event['starts_at']->format('G\hi') }}</dd>
                         </div>
                     </div>
                     <div class="flex gap-3 py-4">
@@ -49,8 +51,8 @@
                         <div>
                             <dt class="text-sm text-stone-500">Lieu</dt>
                             <dd>
-                                <a href="{{ route('events.venue', $event->venue) }}" class="font-medium underline decoration-ink/20 underline-offset-4 hover:decoration-ink">{{ $event->venue->name }}</a>
-                                <p class="text-stone-600">{{ $event->venue->address }}</p>
+                                <a href="{{ route('events.venue', $event['venue']['slug']) }}" class="font-medium underline decoration-ink/20 underline-offset-4 hover:decoration-ink">{{ $event['venue']['name'] }}</a>
+                                <p class="text-stone-600">{{ $event['venue']['address'] }}</p>
                             </dd>
                         </div>
                     </div>
@@ -58,32 +60,32 @@
                         <x-icon.ticket class="mt-1 fill-stone-400" />
                         <div>
                             <dt class="text-sm text-stone-500">Entrée</dt>
-                            <dd class="font-medium">{{ $event->priceLabel() }}</dd>
+                            <dd class="font-medium"><x-price :amount="$event['price']" /></dd>
                         </div>
                     </div>
                 </dl>
 
-                @if ($event->tags->isNotEmpty())
+                @if (! empty($event['tags']))
                     <ul class="flex flex-wrap gap-2" aria-label="Tags de l'événement">
-                        @foreach ($event->tags as $tag)
+                        @foreach ($event['tags'] as $tag)
                             <li>
-                                <a href="{{ route('events.tag', $tag) }}" class="inline-flex rounded-full bg-white px-3 py-1.5 text-sm font-medium ring-1 ring-ink/10 hover:ring-ink/30">{{ $tag->name }}</a>
+                                <a href="{{ route('events.tag', $tag['slug']) }}" class="inline-flex rounded-full bg-white px-3 py-1.5 text-sm font-medium ring-1 ring-ink/10 hover:ring-ink/30">{{ $tag['name'] }}</a>
                             </li>
                         @endforeach
                     </ul>
                 @endif
 
                 <div class="flex flex-wrap items-start gap-2">
-                    <x-button :href="route('events.edit', $event)" variant="secondary">
+                    <x-button :href="route('events.edit', $event['slug'])" variant="secondary">
                         <x-icon.pencil-square class="fill-current" />
                         Modifier
                     </x-button>
 
-                    <form method="POST" action="{{ route('events.publication', $event) }}">
+                    <form method="POST" action="{{ route('events.publication', $event['slug']) }}">
                         @csrf
                         @method('PATCH')
 
-                        @if ($event->is_published)
+                        @if ($event['is_published'])
                             <x-button variant="secondary">
                                 <x-icon.eye-slash class="fill-current" />
                                 Dépublier
@@ -102,7 +104,7 @@
                             Supprimer
                         </summary>
 
-                        <form method="POST" action="{{ route('events.destroy', $event) }}" class="mt-3 rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-900/15">
+                        <form method="POST" action="{{ route('events.destroy', $event['slug']) }}" class="mt-3 rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-900/15">
                             @csrf
                             @method('DELETE')
 

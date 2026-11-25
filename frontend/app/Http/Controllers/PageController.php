@@ -2,30 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Event;
-use App\Models\Tag;
-use App\Models\Venue;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\BackendApi;
 use Illuminate\View\View;
 
 class PageController extends Controller
 {
+    public function __construct(private BackendApi $api)
+    {
+    }
+
     public function home(): View
     {
-        $upcoming = Event::published()->upcoming()->with('category', 'venue')->orderBy('starts_at')->take(7)->get();
-        $countUpcoming = fn (Builder $query) => $query->published()->upcoming();
+        $upcoming = collect($this->api->events(['per_page' => 7])->items());
 
         return view('home', [
             'featured' => $upcoming->first(),
             'nextEvents' => $upcoming->skip(1),
-            'categories' => Category::withCount(['events' => $countUpcoming])->orderBy('name')->get(),
-            'venues' => Venue::withCount(['events' => $countUpcoming])->orderBy('name')->get(),
-            'popularTags' => Tag::withCount(['events' => $countUpcoming])
-                ->orderByDesc('events_count')
-                ->orderBy('name')
-                ->get()
-                ->filter(fn (Tag $tag) => $tag->events_count > 0),
+            'categories' => $this->api->all('categories'),
+            'venues' => $this->api->all('venues'),
+            'popularTags' => $this->api->all('tags')
+                ->filter(fn (array $tag) => $tag['events_count'] > 0)
+                ->sortBy([['events_count', 'desc'], ['name', 'asc']]),
         ]);
     }
 
