@@ -4,9 +4,6 @@ use App\Models\Category;
 use App\Models\Event;
 use App\Models\Tag;
 use App\Models\Venue;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('splits upcoming and past at the start of today', function () {
     $this->travelTo('2026-12-05 10:00');
@@ -56,4 +53,10 @@ it('seeds upcoming, past and draft events', function () {
         ->and(Event::where('is_published', false)->count())->toBeGreaterThanOrEqual(3)
         ->and(Event::whereNull('category_id')->orWhereNull('venue_id')->count())->toBe(0)
         ->and(Event::has('tags')->count())->toBeGreaterThanOrEqual(20);
+});
+
+it('finds categories, venues and tags by slug', function () {
+    expect(Category::factory()->create(['slug' => 'concert'])->getRouteKey())->toBe('concert')
+        ->and(Venue::factory()->create(['slug' => 'maison-de-la-culture'])->getRouteKey())->toBe('maison-de-la-culture')
+        ->and(Tag::factory()->create(['slug' => 'en-famille'])->getRouteKey())->toBe('en-famille');
 });

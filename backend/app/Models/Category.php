@@ -2,21 +2,26 @@
 
 namespace App\Models;
 
-use Database\Factories\VenueFactory;
+use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Venue extends Model
+class Category extends Model
 {
-    /** @use HasFactory<VenueFactory> */
+    /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 
     protected $fillable = [
         'name',
         'slug',
-        'address',
+        'color',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 
     public function events(): HasMany
     {
