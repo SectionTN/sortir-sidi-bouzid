@@ -5,7 +5,9 @@ return [
     'array' => 'Le champ :attribute doit être une liste.',
     'boolean' => 'Le champ :attribute doit être vrai ou faux.',
     'date' => 'Le champ :attribute doit être une date valide.',
+    'date_format' => 'Le champ :attribute doit suivre le format :format.',
     'exists' => 'La valeur choisie pour le champ :attribute n\'existe pas.',
+    'in' => 'La valeur du champ :attribute n\'est pas valide.',
     'integer' => 'Le champ :attribute doit être un nombre entier.',
     'max' => [
         'numeric' => 'Le champ :attribute ne doit pas dépasser :max.',
@@ -39,6 +41,12 @@ return [
         'tags' => 'tags',
         'tags.*' => 'tag',
         'is_published' => 'publié',
+        'status' => 'statut',
+        'category' => 'catégorie',
+        'venue' => 'lieu',
+        'tag' => 'tag',
+        'month' => 'mois',
+        'per_page' => 'nombre par page',
     ],
 
 ];

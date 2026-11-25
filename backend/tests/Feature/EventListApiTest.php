@@ -142,3 +142,11 @@ it('keeps a stable order for events at the same time', function () {
 
     expect(collect($response->json('data'))->pluck('id')->all())->toBe($ids);
 });
+
+it('explains a wrong filter in French', function () {
+    $this->getJson('/api/events?status=bientot&month=decembre')
+        ->assertJsonValidationErrors([
+            'status' => 'La valeur du champ statut n\'est pas valide.',
+            'month' => 'Le champ mois doit suivre le format Y-m.',
+        ]);
+});

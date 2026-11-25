@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\IndexEventRequest;
+use App\Http\Requests\StoreEventRequest;
+use App\Http\Requests\UpdateEventRequest;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 
 class EventController extends Controller
 {
@@ -44,6 +49,56 @@ class EventController extends Controller
      */
     public function show(Event $event): EventResource
     {
+        return new EventResource($event->load('category', 'venue', 'tags'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreEventRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $validated['is_published'] = $request->boolean('is_published');
+
+        $event = Event::create(Arr::except($validated, ['tags']));
+        $event->tags()->sync($validated['tags'] ?? []);
+
+        return (new EventResource($event->load('category', 'venue', 'tags')))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateEventRequest $request, Event $event): EventResource
+    {
+        $validated = $request->validated();
+        $validated['is_published'] = $request->boolean('is_published');
+
+        $event->update(Arr::except($validated, ['tags']));
+        $event->tags()->sync($validated['tags'] ?? []);
+
+        return new EventResource($event->load('category', 'venue', 'tags'));
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Event $event): Response
+    {
+        $event->delete();
+
+        return response()->noContent();
+    }
+
+    /**
+     * Publish a draft, or move a published event back to the drafts.
+     */
+    public function togglePublication(Event $event): EventResource
+    {
+        $event->update(['is_published' => ! $event->is_published]);
+
         return new EventResource($event->load('category', 'venue', 'tags'));
     }
 }
