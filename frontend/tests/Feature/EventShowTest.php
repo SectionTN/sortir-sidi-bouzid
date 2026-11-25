@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Event;
-use App\Models\Tag;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -105,28 +103,4 @@ it('escapes the page title only once', function () {
     $this->get(route('events.show', 'soiree-jazz'))
         ->assertOk()
         ->assertSee('<title>Tournoi d&#039;échecs - Sortir à Sidi Bouzid</title>', false);
-});
-
-it('publishes and unpublishes an event', function () {
-    $event = Event::factory()->create();
-
-    $this->patch(route('events.publication', $event))
-        ->assertRedirect(route('events.show', $event))
-        ->assertSessionHas('status');
-    expect($event->fresh()->is_published)->toBeTrue();
-
-    $this->patch(route('events.publication', $event));
-    expect($event->fresh()->is_published)->toBeFalse();
-});
-
-it('deletes an event and its tag links', function () {
-    $event = Event::factory()->published()->create();
-    $event->tags()->attach(Tag::factory()->create());
-
-    $this->delete(route('events.destroy', $event))
-        ->assertRedirect(route('events.index'))
-        ->assertSessionHas('status');
-
-    $this->assertDatabaseMissing('events', ['id' => $event->id]);
-    $this->assertDatabaseMissing('event_tag', ['event_id' => $event->id]);
 });

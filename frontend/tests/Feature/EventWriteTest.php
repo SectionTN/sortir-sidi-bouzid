@@ -1,141 +1,165 @@
 <?php
 
-use App\Models\Category;
-use App\Models\Event;
-use App\Models\Tag;
-use App\Models\Venue;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     $this->withoutVite();
     $this->travelTo('2026-12-05 10:00');
 });
 
-function eventData(array $overrides = []): array
+function formLists(): array
+{
+    return [
+        'backend.test/api/categories' => Http::response(['data' => [
+            ['id' => 1, 'name' => 'Concert', 'slug' => 'concert', 'color' => 'rose', 'events_count' => 0],
+        ]]),
+        'backend.test/api/venues' => Http::response(['data' => [
+            ['id' => 1, 'name' => 'Maison de la culture', 'slug' => 'maison-de-la-culture', 'address' => 'Avenue Habib Bourguiba', 'events_count' => 0],
+        ]]),
+        'backend.test/api/tags' => Http::response(['data' => [
+            ['id' => 3, 'name' => 'En famille', 'slug' => 'en-famille', 'events_count' => 0],
+            ['id' => 5, 'name' => 'En plein air', 'slug' => 'en-plein-air', 'events_count' => 0],
+        ]]),
+    ];
+}
+
+function formData(array $overrides = []): array
 {
     return array_merge([
+        '_token' => 'jeton',
         'title' => 'Soirée jazz',
         'slug' => 'soiree-jazz',
         'summary' => 'Un trio pour une soirée de standards.',
         'description' => 'Le trio reprend des standards du jazz pendant deux heures.',
         'starts_at' => '2026-12-12T19:30',
         'price' => '15',
-        'category_id' => Category::factory()->create()->id,
-        'venue_id' => Venue::factory()->create()->id,
+        'category_id' => '1',
+        'venue_id' => '1',
         'is_published' => '1',
     ], $overrides);
 }
 
+function refusedWith(array $errors): array
+{
+    return ['backend.test/api/events' => Http::response(['message' => 'Données invalides.', 'errors' => $errors], 422)] + formLists();
+}
+
 it('shows the create form with the categories and venues', function () {
-    Category::factory()->create(['name' => 'Concert']);
-    Venue::factory()->create(['name' => 'Maison de la culture']);
+    Http::fake(formLists());
 
     $this->get(route('events.create'))
         ->assertOk()
         ->assertSee('Proposer un événement')
         ->assertSee('Concert')
-        ->assertSee('Maison de la culture');
+        ->assertSee('Maison de la culture')
+        ->assertSee('En plein air');
 });
 
-it('creates an event with its tags', function () {
-    $tags = Tag::factory(2)->create();
+it('creates an event and follows its slug', function () {
+    Http::fake(['backend.test/api/events' => Http::response(['data' => apiEvent()], 201)]);
 
-    $this->post(route('events.store'), eventData(['tags' => $tags->pluck('id')->all()]))
+    $this->post(route('events.store'), formData(['tags' => ['3', '5']]))
         ->assertRedirect(route('events.show', 'soiree-jazz'))
-        ->assertSessionHas('status');
+        ->assertSessionHas('status', 'Événement enregistré.');
 
-    $event = Event::where('slug', 'soiree-jazz')->first();
-
-    expect($event->title)->toBe('Soirée jazz')
-        ->and($event->starts_at->format('Y-m-d H:i'))->toBe('2026-12-12 19:30')
-        ->and($event->price)->toBe(15)
-        ->and($event->is_published)->toBeTrue()
-        ->and($event->tags()->count())->toBe(2);
+    Http::assertSent(fn (Request $request) => $request->method() === 'POST'
+        && $request['title'] === 'Soirée jazz'
+        && $request['tags'] === ['3', '5']
+        && ! isset($request['_token']));
 });
 
 it('creates a draft when the published box is unchecked', function () {
-    $this->post(route('events.store'), eventData(['is_published' => '0']));
+    Http::fake(['backend.test/api/events' => Http::response(['data' => apiEvent(['is_published' => false])], 201)]);
 
-    expect(Event::first()->is_published)->toBeFalse();
+    $this->post(route('events.store'), formData(['is_published' => '0']))->assertRedirect();
+
+    Http::assertSent(fn (Request $request) => $request['is_published'] === '0');
 });
 
-it('refuses an event without a title, in French', function () {
-    $this->from(route('events.create'))
-        ->post(route('events.store'), eventData(['title' => '']))
-        ->assertRedirect(route('events.create'))
-        ->assertSessionHasErrors(['title' => 'Le champ titre est obligatoire.']);
+it('shows the backend errors in French', function () {
+    Http::fake(refusedWith(['title' => ['Le champ titre est obligatoire.']]));
 
-    $this->assertDatabaseCount('events', 0);
-});
-
-it('refuses a slug with capitals, accents or spaces', function () {
-    $this->post(route('events.store'), eventData(['slug' => 'Soirée Malouf']))
-        ->assertSessionHasErrors('slug');
-
-    $this->assertDatabaseCount('events', 0);
-});
-
-it('refuses a slug used by another event', function () {
-    Event::factory()->create(['slug' => 'soiree-jazz']);
-
-    $this->post(route('events.store'), eventData())
-        ->assertSessionHasErrors(['slug' => 'Ce slug est déjà utilisé par un autre événement.']);
-});
-
-it('refuses a slug taken by a page of the site', function (string $slug) {
-    $this->post(route('events.store'), eventData(['slug' => $slug]))
-        ->assertSessionHasErrors('slug');
-})->with(['create', 'passes', 'brouillons']);
-
-it('refuses a negative price, an unknown venue and a wrong date', function () {
-    $this->post(route('events.store'), eventData(['price' => '-5', 'venue_id' => 999, 'starts_at' => 'demain soir']))
-        ->assertSessionHasErrors(['price', 'venue_id', 'starts_at']);
-
-    $this->assertDatabaseCount('events', 0);
-});
-
-it('prefills the edit form, date included', function () {
-    $event = Event::factory()->create(['title' => 'Soirée jazz', 'starts_at' => '2026-12-12 19:30']);
-
-    $this->get(route('events.edit', $event))
+    $this->followingRedirects()
+        ->from(route('events.create'))
+        ->post(route('events.store'), formData(['title' => '']))
         ->assertOk()
-        ->assertSee('Soirée jazz')
-        ->assertSee('value="2026-12-12T19:30"', false);
+        ->assertSee('Le formulaire contient des erreurs')
+        ->assertSee('Le champ titre est obligatoire.');
+
+    Http::assertSent(fn (Request $request) => $request->method() === 'POST' && $request['title'] === null);
 });
 
 it('keeps the typed date after a validation error', function () {
+    Http::fake(refusedWith(['title' => ['Le champ titre est obligatoire.']]));
+
     $this->followingRedirects()
         ->from(route('events.create'))
-        ->post(route('events.store'), eventData(['title' => '', 'starts_at' => '2026-12-24T21:15']))
-        ->assertSee('Le champ titre est obligatoire.')
+        ->post(route('events.store'), formData(['title' => '', 'starts_at' => '2026-12-24T21:15']))
+        ->assertOk()
         ->assertSee('value="2026-12-24T21:15"', false);
 });
 
+it('shows a tag error and keeps the tags checked', function () {
+    Http::fake(refusedWith(['tags.0' => ['Le tag sélectionné est invalide.']]));
+
+    $this->followingRedirects()
+        ->from(route('events.create'))
+        ->post(route('events.store'), formData(['tags' => ['3']]))
+        ->assertOk()
+        ->assertSee('Le tag sélectionné est invalide.')
+        ->assertSee('value="3" class="sr-only" checked', false)
+        ->assertDontSee('value="5" class="sr-only" checked', false);
+});
+
+it('prefills the edit form, date included', function () {
+    Http::fake(['backend.test/api/events/soiree-jazz' => Http::response(['data' => apiEvent([
+        'tags' => [['id' => 5, 'name' => 'En plein air', 'slug' => 'en-plein-air']],
+    ])])] + formLists());
+
+    $this->get(route('events.edit', 'soiree-jazz'))
+        ->assertOk()
+        ->assertSee('Modifier Soirée jazz')
+        ->assertSee('value="2026-12-12T19:30"', false)
+        ->assertSee('<option value="1" selected>Concert</option>', false)
+        ->assertSee('<option value="1" selected>Maison de la culture</option>', false)
+        ->assertSee('value="5" class="sr-only" checked', false)
+        ->assertSee('action="'.route('events.update', 'soiree-jazz').'"', false);
+});
+
 it('updates an event and follows its new slug', function () {
-    $event = Event::factory()->create(['slug' => 'ancien-slug']);
+    Http::fake(['backend.test/api/events/soiree-jazz' => Http::response(['data' => apiEvent(['slug' => 'soiree-jazz-au-jardin'])])]);
 
-    $this->put(route('events.update', $event), eventData(['slug' => 'nouveau-slug']))
-        ->assertRedirect(route('events.show', 'nouveau-slug'));
+    $this->put(route('events.update', 'soiree-jazz'), formData(['_method' => 'PUT', 'slug' => 'soiree-jazz-au-jardin']))
+        ->assertRedirect(route('events.show', 'soiree-jazz-au-jardin'))
+        ->assertSessionHas('status', 'Modifications enregistrées.');
 
-    expect($event->fresh()->slug)->toBe('nouveau-slug');
+    Http::assertSent(fn (Request $request) => $request->method() === 'PUT'
+        && $request['slug'] === 'soiree-jazz-au-jardin'
+        && ! isset($request['_method']));
 });
 
-it('keeps its own slug on update', function () {
-    $event = Event::factory()->create(['slug' => 'soiree-jazz']);
+it('publishes and unpublishes an event', function () {
+    Http::fake(['backend.test/api/events/soiree-jazz/publication' => Http::sequence()
+        ->push(['data' => apiEvent()])
+        ->push(['data' => apiEvent(['is_published' => false])])]);
 
-    $this->put(route('events.update', $event), eventData(['title' => 'Soirée jazz au jardin']))
-        ->assertSessionHasNoErrors();
+    $this->patch(route('events.publication', 'soiree-jazz'))
+        ->assertRedirect(route('events.show', 'soiree-jazz'))
+        ->assertSessionHas('status', 'Événement publié : il apparaît maintenant dans l\'agenda.');
 
-    expect($event->fresh()->title)->toBe('Soirée jazz au jardin');
+    $this->patch(route('events.publication', 'soiree-jazz'))
+        ->assertSessionHas('status', 'Événement retiré de l\'agenda : il est maintenant dans les brouillons.');
+
+    Http::assertSentCount(2);
 });
 
-it('syncs tags on update', function () {
-    [$family, $outdoor] = Tag::factory(2)->create();
-    $event = Event::factory()->create(['slug' => 'soiree-jazz']);
-    $event->tags()->attach([$family->id, $outdoor->id]);
+it('deletes an event', function () {
+    Http::fake(['backend.test/api/events/soiree-jazz' => Http::response(null, 204)]);
 
-    $this->put(route('events.update', $event), eventData(['tags' => [$family->id]]));
-    expect($event->tags()->pluck('tags.id')->all())->toBe([$family->id]);
+    $this->delete(route('events.destroy', 'soiree-jazz'))
+        ->assertRedirect(route('events.index'))
+        ->assertSessionHas('status', 'Événement supprimé.');
 
-    $this->put(route('events.update', $event), eventData());
-    expect($event->tags()->count())->toBe(0);
+    Http::assertSent(fn (Request $request) => $request->method() === 'DELETE');
 });

@@ -1,7 +1,7 @@
 <x-layout>
-    <x-slot:title>Modifier {{ $event->title }} - Sortir à Sidi Bouzid</x-slot:title>
+    <x-slot:title>Modifier {{ $event['title'] }} - Sortir à Sidi Bouzid</x-slot:title>
 
-    <x-page-header title="Modifier l'événement" :subtitle="$event->title" />
+    <x-page-header title="Modifier l'événement" :subtitle="$event['title']" />
 
     @if ($errors->any())
         <x-alert type="error" title="Le formulaire contient des erreurs" class="mb-6">

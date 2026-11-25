@@ -4,6 +4,9 @@ use App\Models\Category;
 use App\Models\Event;
 use App\Models\Tag;
 use App\Models\Venue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 it('splits upcoming and past at the start of today', function () {
     $this->travelTo('2026-12-05 10:00');

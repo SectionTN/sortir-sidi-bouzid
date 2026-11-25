@@ -2,16 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Event;
-use App\Models\Tag;
-use App\Models\Venue;
 use App\Services\BackendApi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class EventController extends Controller
@@ -104,90 +98,55 @@ class EventController extends Controller
 
         return view('events.show', compact('event', 'related'));
     }
+
     public function create(): View
     {
-        return view('events.create', [
-            'categories' => Category::orderBy('name')->get(),
-            'venues' => Venue::orderBy('name')->get(),
-            'tags' => Tag::orderBy('name')->get(),
-        ]);
+        return view('events.create', $this->formLists());
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $this->validateEvent($request);
+        $event = $this->api->createEvent($request->except('_token'));
 
-        $event = Event::create(Arr::except($validated, ['tags']));
-        $event->tags()->sync($validated['tags'] ?? []);
-
-        return redirect()->route('events.show', $event)->with('status', 'Événement enregistré.');
+        return redirect()->route('events.show', $event['slug'])->with('status', 'Événement enregistré.');
     }
 
-    public function edit(Event $event): View
+    public function edit(string $slug): View
     {
-        $event->load('tags');
-
-        return view('events.edit', [
-            'event' => $event,
-            'categories' => Category::orderBy('name')->get(),
-            'venues' => Venue::orderBy('name')->get(),
-            'tags' => Tag::orderBy('name')->get(),
-        ]);
+        return view('events.edit', ['event' => $this->api->event($slug)] + $this->formLists());
     }
 
-    public function update(Request $request, Event $event): RedirectResponse
+    public function update(Request $request, string $slug): RedirectResponse
     {
-        $validated = $this->validateEvent($request, $event);
+        $event = $this->api->updateEvent($slug, $request->except('_token', '_method'));
 
-        $event->update(Arr::except($validated, ['tags']));
-        $event->tags()->sync($validated['tags'] ?? []);
-
-        return redirect()->route('events.show', $event)->with('status', 'Modifications enregistrées.');
+        return redirect()->route('events.show', $event['slug'])->with('status', 'Modifications enregistrées.');
     }
 
-    public function destroy(Event $event): RedirectResponse
+    public function destroy(string $slug): RedirectResponse
     {
-        $event->delete();
+        $this->api->deleteEvent($slug);
 
         return redirect()->route('events.index')->with('status', 'Événement supprimé.');
     }
 
-    public function togglePublication(Event $event): RedirectResponse
+    public function togglePublication(string $slug): RedirectResponse
     {
-        $event->update(['is_published' => ! $event->is_published]);
+        $event = $this->api->togglePublication($slug);
 
-        $status = $event->is_published
+        $status = $event['is_published']
             ? 'Événement publié : il apparaît maintenant dans l\'agenda.'
             : 'Événement retiré de l\'agenda : il est maintenant dans les brouillons.';
 
-        return redirect()->route('events.show', $event)->with('status', $status);
+        return redirect()->route('events.show', $event['slug'])->with('status', $status);
     }
 
-    private function validateEvent(Request $request, ?Event $event = null): array
+    private function formLists(): array
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'regex:/^[a-z0-9-]+$/',
-                Rule::notIn(['create', 'passes', 'brouillons']),
-                Rule::unique('events', 'slug')->ignore($event),
-            ],
-            'summary' => ['nullable', 'string', 'max:255'],
-            'description' => ['required', 'string', 'min:20'],
-            'starts_at' => ['required', 'date'],
-            'price' => ['required', 'integer', 'min:0', 'max:1000'],
-            'category_id' => ['required', 'integer', 'exists:categories,id'],
-            'venue_id' => ['required', 'integer', 'exists:venues,id'],
-            'tags' => ['nullable', 'array'],
-            'tags.*' => ['integer', 'exists:tags,id'],
-            'is_published' => ['nullable', 'boolean'],
-        ]);
-
-        $validated['is_published'] = $request->boolean('is_published');
-
-        return $validated;
+        return [
+            'categories' => $this->api->all('categories'),
+            'venues' => $this->api->all('venues'),
+            'tags' => $this->api->all('tags'),
+        ];
     }
 }
