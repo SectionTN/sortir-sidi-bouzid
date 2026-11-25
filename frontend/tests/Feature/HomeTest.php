@@ -86,5 +86,7 @@ it('shows the about page with the author', function () {
         ->assertOk()
         ->assertSee('Rayen Sbai')
         ->assertSee('MDW3, classe 3, groupe 1')
-        ->assertSee('Atelier Framework Côté Serveur');
+        ->assertSee('Atelier Framework Côté Serveur')
+        ->assertSee('base PostgreSQL')
+        ->assertDontSee('SQLite');
 });

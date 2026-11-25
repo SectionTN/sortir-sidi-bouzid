@@ -10,9 +10,7 @@ use Illuminate\View\View;
 
 class EventController extends Controller
 {
-    public function __construct(private BackendApi $api)
-    {
-    }
+    public function __construct(private BackendApi $api) {}
 
     public function index(): View
     {

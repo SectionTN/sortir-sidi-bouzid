@@ -7,9 +7,7 @@ use Illuminate\View\View;
 
 class PageController extends Controller
 {
-    public function __construct(private BackendApi $api)
-    {
-    }
+    public function __construct(private BackendApi $api) {}
 
     public function home(): View
     {
