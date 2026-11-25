@@ -136,7 +136,11 @@ it('paginates by 6 and accepts per_page', function () {
 });
 
 it('keeps a stable order for events at the same time', function () {
-    $ids = Event::factory(3)->published()->create(['starts_at' => '2026-12-20 19:00'])->pluck('id')->sort()->values()->all();
+    $events = Event::factory(3)->published()->create(['starts_at' => '2026-12-20 19:00']);
+    $ids = $events->pluck('id')->sort()->values()->all();
+
+    // PostgreSQL writes an updated row at the end of the table, so the first event comes back last without a tie-break.
+    $events->first()->update(['title' => 'Titre modifié']);
 
     $response = $this->getJson('/api/events')->assertOk();
 
